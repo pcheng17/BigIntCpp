@@ -1,0 +1,106 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        compiler: [gcc, clang]
+        exclude:
+          # Windows doesn't have gcc/clang in the same way
+          - os: windows-latest
+            compiler: gcc
+          - os: windows-latest
+            compiler: clang
+        include:
+          # Add MSVC for Windows
+          - os: windows-latest
+            compiler: msvc
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          sudo apt-get install -y cmake build-essential gcc g++
+        elif [ "${{ matrix.compiler }}" = "clang" ]; then
+          sudo apt-get install -y cmake build-essential clang
+        fi
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install cmake
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          # clang is default on macOS
+          echo "Using system clang"
+        elif [ "${{ matrix.compiler }}" = "gcc" ]; then
+          brew install gcc
+        fi
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install cmake
+
+    - name: Set compiler environment (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          echo "CC=gcc" >> $GITHUB_ENV
+          echo "CXX=g++" >> $GITHUB_ENV
+        elif [ "${{ matrix.compiler }}" = "clang" ]; then
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+        fi
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: Configure with CMake (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        cd build
+        cmake ..
+
+    - name: Configure with CMake (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd build
+        cmake .. -G "Visual Studio 17 2022"
+
+    - name: Build (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        cd build
+        make
+
+    - name: Build (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd build
+        cmake --build . --config Release
+
+    - name: Run tests (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        cd build
+        ./tests
+
+    - name: Run tests (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd build
+        .\Release\tests.exe
