@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(yabi
+project(BigIntCpp
     VERSION 1.0.0
-    DESCRIPTION "yabi"
+    DESCRIPTION "BigIntCpp"
     LANGUAGES CXX
 )
 
@@ -24,16 +24,16 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 # Create the main library as header-only
-add_library(yabi INTERFACE)
+add_library(BigIntCpp INTERFACE)
 
 # Set include directories
-target_include_directories(yabi INTERFACE
+target_include_directories(BigIntCpp INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
 # Require C++23 features
-target_compile_features(yabi INTERFACE cxx_std_23)
+target_compile_features(BigIntCpp INTERFACE cxx_std_23)
 
 # Testing with doctest
 enable_testing()
@@ -58,7 +58,7 @@ add_executable(tests
 
 target_link_libraries(tests
     PRIVATE
-    yabi
+    BigIntCpp
     doctest::doctest
 )
 
