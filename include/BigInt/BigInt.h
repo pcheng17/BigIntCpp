@@ -30,8 +30,8 @@ public:
             mIsDynamic = true;
             mSize = 2;
             mData.dynamicData = new uint32_t[mSize];
-            mData.dynamicData[0] = num % BASE;
-            mData.dynamicData[1] = num / BASE;
+            mData.dynamicData[0] = num & MASK;
+            mData.dynamicData[1] = num >> BASE_PWR;
         }
     }
 
@@ -125,8 +125,30 @@ public:
                 mSize = 2;
                 const uint32_t oldValue = mData.staticData[0];
                 mData.dynamicData = new uint32_t[mSize];
-                mData.dynamicData[0] = oldValue % BASE;
-                mData.dynamicData[1] = oldValue / BASE;
+                mData.dynamicData[0] = oldValue & MASK;
+                mData.dynamicData[1] = oldValue >> BASE_PWR;
+            }
+        }
+        return *this;
+    }
+
+    BigInt& operator<<=(int32_t shift)
+    {
+        if (mIsDynamic)
+        {
+            assert(false && "Dynamic shift not implemented yet");
+        }
+        else
+        {
+            mData.staticData[0] <<= shift;
+            if (mData.staticData[0] >= BASE)
+            {
+                mIsDynamic = true;
+                mSize = 2;
+                const uint32_t oldValue = mData.staticData[0];
+                mData.dynamicData = new uint32_t[mSize];
+                mData.dynamicData[0] = oldValue & MASK;
+                mData.dynamicData[1] = oldValue >> BASE_PWR;
             }
         }
         return *this;
@@ -135,7 +157,9 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const BigInt& obj);
 
 private:
-    static constexpr uint32_t BASE = 1u << 30;
+    static constexpr uint32_t BASE_PWR = 30;
+    static constexpr uint32_t BASE = 1u << BASE_PWR;
+    static constexpr uint32_t MASK = BASE - 1;
 
     union
     {
